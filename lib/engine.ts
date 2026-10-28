@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import {
   LOOPS_PER_WORLD,
+  PLAYBACK_RATE,
   TIMING,
   WORLDS,
   media,
@@ -192,6 +193,9 @@ export class WorldEngine {
       video.muted = true;
       video.defaultMuted = true;
       video.playsInline = true;
+      // Loading a new source resets playbackRate to this default.
+      video.defaultPlaybackRate = PLAYBACK_RATE;
+      video.playbackRate = PLAYBACK_RATE;
       video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
       video.loop = false;
@@ -282,6 +286,7 @@ export class WorldEngine {
       video.hidden = false;
       if (video.getAttribute("src") !== clip.src) {
         video.src = clip.src;
+        video.playbackRate = PLAYBACK_RATE;
       } else {
         video.pause();
         if (video.currentTime !== 0) video.currentTime = 0;

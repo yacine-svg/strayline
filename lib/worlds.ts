@@ -55,6 +55,12 @@ export const WORLDS: readonly World[] = [
 /** Full plays of a world's loop before the run moves on. */
 export const LOOPS_PER_WORLD = 2;
 
+/**
+ * Playback speed for every clip. 1 = as generated; 1.6 makes the runner sprint.
+ * Loops stay seamless at any speed because their first and last frames still match.
+ */
+export const PLAYBACK_RATE = 1.6;
+
 /** All in seconds. */
 export const TIMING = {
   /** Fade that hides decode hitches when one clip hands over to the next. */
