@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-unbounded), "Arial Black", system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
+  --color-ink: #15121c;
+  --color-cream: #f3ede2;
+}
+
+@layer base {
+  body {
+    background: var(--color-ink);
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /*
+   * The headline: clamp(4rem, 11vw, 11rem) from the brief, also capped by viewport
+   * height so it never runs into the nav or thumbnails on short laptop screens.
+   */
+  .hero-headline {
+    font-size: clamp(3.2rem, 14vw, 5rem);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+  }
+  @media (min-width: 48rem) {
+    .hero-headline {
+      font-size: clamp(4rem, min(11vw, 19svh), 11rem);
+    }
+  }
+
+  /* Darkens only the left third and the bottom, so the footage keeps its brightness. */
+  .scrim {
+    background:
+      linear-gradient(to bottom, rgb(0 0 0 / 0.3), transparent 18%),
+      linear-gradient(to top, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.15) 28%, transparent 45%),
+      linear-gradient(to right, rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.18) 34%, transparent 58%);
+  }
+  @media (max-width: 47.99rem) {
+    .scrim {
+      background:
+        linear-gradient(to bottom, rgb(0 0 0 / 0.35), transparent 22%),
+        linear-gradient(to top, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0.35) 45%, transparent 75%);
+    }
+  }
+
+  .stage-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  /*
+   * Stand-in while a world has no footage: the path the runner follows to the horizon,
+   * its centre dashes rushing toward the camera. The scene is the 3D stage, with the
+   * vanishing point on the horizon line of the gradient (56%).
+   */
+  .stage-scene {
+    perspective: 340px;
+    perspective-origin: 50% 56%;
+  }
+  .stage-path {
+    position: absolute;
+    top: 100%; /* starts at the bottom edge of the frame… */
+    left: 50%;
+    width: min(46vw, 620px);
+    height: 5200px; /* …and runs this far into the distance */
+    translate: -50% 0;
+    transform-origin: 50% 0;
+    transform: rotateX(-90deg); /* laid flat, as the ground */
+    background-image:
+      linear-gradient(to bottom, var(--scene-accent) 0 45%, transparent 45%),
+      linear-gradient(
+        to right,
+        transparent,
+        rgb(255 255 255 / 0.07) 18%,
+        rgb(255 255 255 / 0.13) 50%,
+        rgb(255 255 255 / 0.07) 82%,
+        transparent
+      );
+    background-size: 12px 160px, 100% 100%;
+    background-position: 50% 0, 0 0;
+    background-repeat: repeat-y, no-repeat;
+    mask-image: linear-gradient(to bottom, #000 25%, transparent 90%);
+    animation: stage-run 0.42s linear infinite;
+  }
+
+  /* Rotating ring behind the stat. */
+  .stat-orbit {
+    animation: stat-orbit 48s linear infinite;
+  }
+}
+
+/* No animated stand-in under real video, while paused, or with reduced motion. */
+.stage-layer[data-mode="video"] .stage-path,
+.hero[data-paused="true"] .stage-path,
+.hero[data-paused="true"] .stat-orbit {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-path,
+  .stat-orbit {
+    animation: none;
+  }
+}
+
+/* Moving the dashes toward the element's near edge brings them at the camera. */
+@keyframes stage-run {
+  to {
+    background-position: 50% -160px, 0 0;
+  }
+}
+
+@keyframes stat-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
