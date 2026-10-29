@@ -37,7 +37,7 @@ Reload the page and they're used; there's nothing to change in code. You can add
 
 | File | What's in it |
 | --- | --- |
-| `lib/worlds.ts` | World copy, accent colours, stand-in colours, timings, file names, and `PLAYBACK_RATE` (how fast the runner runs: 1 = as generated) |
+| `lib/worlds.ts` | World copy, accent colours, stand-in colours, timings, file names, `PLAYBACK_RATE` (how fast the runner runs: 1 = as generated), and `SEAM_BLEND` (longer dissolves for seams whose frames don't match) |
 | `lib/site.ts` | Nav, buttons, the stat and accessible labels |
 | `lib/engine.ts` | The A/B video engine |
 | `components/VideoStage.tsx` | The two stacked layers the engine drives |

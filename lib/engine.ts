@@ -2,6 +2,7 @@ import { gsap } from "gsap";
 import {
   LOOPS_PER_WORLD,
   PLAYBACK_RATE,
+  SEAM_BLEND,
   TIMING,
   WORLDS,
   media,
@@ -58,7 +59,8 @@ interface Clip {
   real: boolean;
 }
 
-type Phase = "boot" | "looping" | "transitioning" | "fading";
+/** "handoff": a transition has ended (or is ending) and the next loop is starting. */
+type Phase = "boot" | "looping" | "transitioning" | "handoff" | "fading";
 type Slot = 0 | 1;
 
 const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
@@ -437,14 +439,16 @@ export class WorldEngine {
         this.fadeTo(to, TIMING.fallbackTransition, 0.5, ring);
         return;
       }
-      this.reveal(back, TIMING.seamFade, () => this.preloadNext());
+      this.reveal(back, this.seamFade(from, "in"), () => this.preloadNext());
     });
   }
 
-  /** The transition clip ended: hand over to the next world's loop. */
+  /** The transition clip ended (or is about to): hand over to the next world's loop. */
   private finishTransition() {
     if (this.phase !== "transitioning") return;
+    const from = this.world;
     const to = this.target;
+    this.phase = "handoff";
     if (!this.switched) this.switchDisplay(to);
     this.settleFade();
     const token = ++this.token;
@@ -454,9 +458,26 @@ export class WorldEngine {
 
     void this.play(back).then(() => {
       if (token !== this.token) return;
-      this.reveal(back, TIMING.seamFade, () => this.preloadNext());
+      this.reveal(back, this.seamFade(from, "out"), () => this.preloadNext());
       this.enterLoop(to);
     });
+  }
+
+  /** Fade length at a seam: the usual short fade, or a longer blend from SEAM_BLEND. */
+  private seamFade(from: number, side: "in" | "out") {
+    return Math.max(TIMING.seamFade, SEAM_BLEND[WORLDS[from].id]?.[side] ?? 0);
+  }
+
+  /** Whether this seam blends long enough to need its clips overlapping. */
+  private overlaps(from: number, side: "in" | "out") {
+    return this.seamFade(from, side) > TIMING.seamFade;
+  }
+
+  /** Seconds of screen time left in a clip. */
+  private remaining(video: HTMLVideoElement) {
+    const d = video.duration;
+    if (!Number.isFinite(d) || d <= 0) return Infinity;
+    return (d - video.currentTime) / (video.playbackRate || 1);
   }
 
   /** Crossfade straight to a world's loop: jumps, missing transitions and reduced motion. */
@@ -499,6 +520,16 @@ export class WorldEngine {
           video.loop = this.repeatAgain();
         }
         this.lastTime = t;
+        // A long blend into the transition starts while the loop's last play is still running.
+        if (
+          !video.loop &&
+          this.overlaps(this.world, "in") &&
+          this.transitionClip(this.world).real &&
+          this.remaining(video) <= this.seamFade(this.world, "in")
+        ) {
+          this.advance();
+          return;
+        }
       } else if (this.timer.elapsed >= this.timer.duration) {
         if (this.repeatAgain()) {
           this.loops += 1;
@@ -509,6 +540,18 @@ export class WorldEngine {
         }
       }
       this.cb.onProgress(this.ringValue());
+      return;
+    }
+
+    // A long blend into the next loop starts before the transition finishes.
+    if (
+      this.phase === "transitioning" &&
+      clip.kind === "transition" &&
+      clip.real &&
+      this.overlaps(this.world, "out") &&
+      this.remaining(this.layers[this.front].video) <= this.seamFade(this.world, "out")
+    ) {
+      this.finishTransition();
       return;
     }
 

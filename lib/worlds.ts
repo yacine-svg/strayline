@@ -61,6 +61,19 @@ export const LOOPS_PER_WORLD = 2;
  */
 export const PLAYBACK_RATE = 1.6;
 
+/**
+ * Longer overlaps, in seconds on screen, for seams whose frames don't line up, keyed by
+ * the world a transition leaves. `in` blends the loop into the transition; `out` blends
+ * the transition into the next world's loop. Seams not listed hand over at their
+ * matching frames with a short fade. Remove an entry once its clip is regenerated.
+ */
+export const SEAM_BLEND: Partial<Record<WorldId, { in?: number; out?: number }>> = {
+  // ice-to-petal starts on a wider shot than ice-loop ends on.
+  ice: { in: 0.7 },
+  // petal-to-dune ends on a wider shot than dune-loop starts on.
+  petal: { out: 0.7 },
+};
+
 /** All in seconds. */
 export const TIMING = {
   /** Fade that hides decode hitches when one clip hands over to the next. */
